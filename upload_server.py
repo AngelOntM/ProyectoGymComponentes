@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 import uuid
 import face_recognition
@@ -38,9 +38,10 @@ def detect_face(image_path):
 
 def save_face_image(face_image, user_id):
     """Guardar la imagen del rostro recortada con el nombre user_id.jpg."""
-    file_path = os.path.join(UPLOAD_FOLDER, f"{user_id}.jpg")
+    file_name = f"{user_id}_{uuid.uuid4().hex}.jpg"
+    file_path = os.path.join(UPLOAD_FOLDER, file_name)
     face_image.save(file_path)
-    return f"{user_id}.jpg"
+    return file_name
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
@@ -75,8 +76,14 @@ def upload_image():
         # Eliminar el archivo temporal
         os.remove(temp_path)
 
+        image_url = request.host_url + 'images/' + unique_filename
+
         return jsonify(
-            {'message': 'Image uploaded successfully', 'user_id': user_id, 'file_name': unique_filename}), 200
+            {'message': 'Image uploaded successfully', 'user_id': user_id, 'file_name': unique_filename, 'image_url': image_url}), 200
+
+@app.route('/images/<filename>', methods=['GET'])
+def get_image(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
