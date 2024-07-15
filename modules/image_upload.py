@@ -1,18 +1,11 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Blueprint, request, jsonify
 import os
 import uuid
 import face_recognition
 from PIL import Image
+from config import UPLOAD_FOLDER, TEMP_FOLDER
 
-app = Flask(__name__)
-
-# Directorio donde se guardarán las imágenes
-UPLOAD_FOLDER = 'known_faces'
-TEMP_FOLDER = 'temp_images'
-
-# Crear directorios si no existen
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(TEMP_FOLDER, exist_ok=True)
+image_upload_bp = Blueprint('image_upload', __name__)
 
 def remove_existing_images(user_id):
     """Eliminar imágenes existentes del mismo user_id."""
@@ -43,7 +36,7 @@ def save_face_image(face_image, user_id):
     face_image.save(file_path)
     return file_name
 
-@app.route('/upload', methods=['POST'])
+@image_upload_bp.route('/upload', methods=['POST'])
 def upload_image():
     if 'face_image' not in request.files:
         return jsonify({'error': 'No file part'}), 400
@@ -80,10 +73,3 @@ def upload_image():
 
         return jsonify(
             {'message': 'Image uploaded successfully', 'user_id': user_id, 'file_name': unique_filename, 'image_url': image_url}), 200
-
-@app.route('/images/<filename>', methods=['GET'])
-def get_image(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5001)

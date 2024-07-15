@@ -1,20 +1,15 @@
-from flask import Flask, request, jsonify
+from flask import Blueprint, request, jsonify
 import face_recognition
 import os
+from config import TEMP_FOLDER, UPLOAD_FOLDER
 
-app = Flask(__name__)
+face_recognition_bp = Blueprint('face_recognition', __name__)
 
-# Directorio donde se guardarán las imágenes faciales conocidas
-KNOWN_FACES_DIR = 'known_faces'
-if not os.path.exists(KNOWN_FACES_DIR):
-    os.makedirs(KNOWN_FACES_DIR)
-
-# Cargar imágenes faciales conocidas y sus codificaciones
 def load_known_faces():
     known_face_encodings = []
     known_face_names = []
 
-    for root, dirs, files in os.walk(KNOWN_FACES_DIR):
+    for root, dirs, files in os.walk(UPLOAD_FOLDER):
         for file_name in files:
             if file_name.endswith(".jpg") or file_name.endswith(".png"):
                 image_path = os.path.join(root, file_name)
@@ -23,11 +18,13 @@ def load_known_faces():
                 if encodings:
                     encoding = encodings[0]
                     known_face_encodings.append(encoding)
-                    known_face_names.append(os.path.splitext(file_name)[0])
+                    # Extraer solo el user_id, eliminando el uuid
+                    user_id = file_name.split('_')[0]
+                    known_face_names.append(user_id)
 
     return known_face_encodings, known_face_names
 
-@app.route('/recognize', methods=['POST'])
+@face_recognition_bp.route('/recognize', methods=['POST'])
 def recognize_face():
     if 'face_image' not in request.files:
         return jsonify({'error': 'No file part'}), 400
@@ -37,9 +34,9 @@ def recognize_face():
         return jsonify({'error': 'No selected file'}), 400
 
     # Guardar la imagen temporalmente
-    file_path = os.path.join('temp', file.filename)
-    if not os.path.exists('temp'):
-        os.makedirs('temp')
+    file_path = os.path.join(TEMP_FOLDER, file.filename)
+    if not os.path.exists(TEMP_FOLDER):
+        os.makedirs(TEMP_FOLDER)
     file.save(file_path)
 
     try:
@@ -65,6 +62,3 @@ def recognize_face():
     finally:
         # Eliminar la imagen temporal
         os.remove(file_path)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5002)
