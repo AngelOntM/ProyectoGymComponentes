@@ -8,7 +8,7 @@ user_images_bp = Blueprint('user_images', __name__)
 def get_image(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
-@user_images_bp.route('/user/<user_id>/image', methods=['GET'])
+@user_images_bp.route('/user/image/<user_id>', methods=['GET'])
 def get_user_image(user_id):
     for file_name in os.listdir(UPLOAD_FOLDER):
         if file_name.startswith(f"{user_id}_"):
