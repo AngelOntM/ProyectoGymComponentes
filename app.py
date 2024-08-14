@@ -1,3 +1,4 @@
+#app.py
 from flask import Flask
 from modules.face_recognition import face_recognition_bp
 from modules.image_upload import image_upload_bp
